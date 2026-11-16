@@ -120,3 +120,9 @@ def test_metrics_logged(hub):
     hub.search("hybrid")
     m = hub.metrics()
     assert m["search"] == 1 and m["ingest"] == 2
+
+
+def test_free_text_model_is_inferred_from_stock(hub):
+    res = hub.search("hybrid jazz")
+    assert res["applied_filters"]["model"] == "Jazz" and res["applied_filters"]["make"] == "Honda"
+    assert [r["title"] for r in res["results"]] == ["2020 Honda Jazz 1.5 i-MMD EX"]

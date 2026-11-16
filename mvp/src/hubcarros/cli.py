@@ -8,6 +8,10 @@
   hubcarros search "automatic suv under £15k"
   hubcarros leads [DEALER_ID]
   hubcarros metrics
+  hubcarros synthetic [--dealers 30 --days 60 --seed 7]   # mercado sintético para o terminal
+  hubcarros market                       # visão geral do mercado
+  hubcarros ticker TOYOTA-RAV4-2020      # cotação de um ticker
+  hubcarros watcher new | watcher add TOKEN search "hybrid under £10k" | watcher alerts TOKEN
 """
 
 from __future__ import annotations
@@ -55,7 +59,8 @@ def cmd_dealer_add(args) -> None:
 
 
 def cmd_ingest(args) -> None:
-    summary = _hub(args).ingest(args.dealer_id, parse_csv_file(args.csv, args.dealer_id))
+    observed = date.fromisoformat(args.date) if args.date else None
+    summary = _hub(args).ingest(args.dealer_id, parse_csv_file(args.csv, args.dealer_id), observed, args.allow_empty)
     _print(summary.__dict__)
 
 
@@ -85,6 +90,62 @@ def cmd_leads(args) -> None:
     _print(_hub(args).dealer_leads(args.dealer_id))
 
 
+def cmd_synthetic(args) -> None:
+    from .synthetic import SyntheticMarket
+
+    hub = Hub(Database(args.db))
+    market = SyntheticMarket(seed=args.seed, n_dealers=args.dealers, days=args.days, end=hub.today)
+    result = market.run(hub, progress=lambda d: print(f"  gerando {d}", end="\r", flush=True))
+    print()
+    _print(result)
+
+
+def cmd_market(args) -> None:
+    ov = _hub(args).market_overview(args.limit)
+    print(f"Mercado em {ov['day']}: {ov['active_listings']} anúncios ativos, {ov['tickers']} tickers, "
+          f"{ov['sold_last_30d']} vendidos em 30 dias\n")
+    def table(title, rows):
+        print(title)
+        for r in rows:
+            ch = f"{r['change_30d_pct']:+.1f}%" if r["change_30d_pct"] is not None else "   n/a"
+            print(f"  {r['ticker']:<34} £{r['median_price'] or 0:>7,}  {ch:>7}  ativos {r['active']:>3}  vendidos30d {r['sold_last_30d']:>3}")
+        print()
+    table("Mais anunciados", ov["most_listed"])
+    table("Mais vendidos (30d)", ov["most_sold"])
+    table("Maiores altas (30d)", ov["top_gainers"])
+    table("Maiores quedas (30d)", ov["top_losers"])
+
+
+def cmd_ticker(args) -> None:
+    t = _hub(args).get_ticker(args.ticker, args.days)
+    if t is None:
+        raise SystemExit("Ticker desconhecido.")
+    q = t["quote"]
+    print(f"{t['ticker']}  mediana £{q['median_price'] or 0:,}  (mín £{q['min_price'] or 0:,} / máx £{q['max_price'] or 0:,})  "
+          f"ativos {q['active']}  7d {t['change_7d_pct']}%  30d {t['change_30d_pct']}%  "
+          f"dias p/ vender {t['avg_days_to_sell']}  quedas 7d {t['price_drops_last_7d']}")
+    prices = [h["median_price"] for h in t["history"] if h["median_price"]]
+    if prices:
+        lo, hi = min(prices), max(prices)
+        bars = "▁▂▃▄▅▆▇█"
+        spark = "".join(bars[int((p - lo) / (hi - lo) * 7)] if hi > lo else bars[3] for p in prices)
+        print(f"{t['history'][0]['day']} {spark} {t['history'][-1]['day']}")
+
+
+def cmd_watcher(args) -> None:
+    hub = _hub(args)
+    if args.watcher_cmd == "new":
+        _print(hub.create_watcher())
+    elif args.watcher_cmd == "add":
+        kw = {"query": args.value} if args.kind == "search" else (
+            {"ticker": args.value} if args.kind == "ticker" else {"vehicle_id": int(args.value)})
+        _print(hub.add_watch(args.token, args.kind, **kw))
+    elif args.watcher_cmd == "list":
+        _print(hub.list_watches(args.token))
+    elif args.watcher_cmd == "alerts":
+        _print(hub.get_alerts(args.token))
+
+
 def cmd_metrics(args) -> None:
     _print(_hub(args).metrics())
 
@@ -108,13 +169,28 @@ def build_parser() -> argparse.ArgumentParser:
     add.add_argument("--phone", default=""); add.add_argument("--email", default="")
     add.set_defaults(func=cmd_dealer_add)
 
-    ing = sub.add_parser("ingest"); ing.add_argument("dealer_id"); ing.add_argument("csv"); ing.set_defaults(func=cmd_ingest)
+    ing = sub.add_parser("ingest"); ing.add_argument("dealer_id"); ing.add_argument("csv")
+    ing.add_argument("--date", help="data da observação AAAA-MM-DD (padrão: hoje)")
+    ing.add_argument("--allow-empty", action="store_true", help="confirma que o revendedor está sem estoque")
+    ing.set_defaults(func=cmd_ingest)
     rep = sub.add_parser("report"); rep.add_argument("dealer_id"); rep.set_defaults(func=cmd_report)
     dr = sub.add_parser("draft"); dr.add_argument("vehicle_id", type=int); dr.set_defaults(func=cmd_draft)
     se = sub.add_parser("search"); se.add_argument("query"); se.add_argument("--near"); se.add_argument("--limit", type=int, default=10)
     se.set_defaults(func=cmd_search)
     le = sub.add_parser("leads"); le.add_argument("dealer_id", nargs="?"); le.set_defaults(func=cmd_leads)
     sub.add_parser("metrics").set_defaults(func=cmd_metrics)
+    syn = sub.add_parser("synthetic"); syn.add_argument("--dealers", type=int, default=30)
+    syn.add_argument("--days", type=int, default=60); syn.add_argument("--seed", type=int, default=7)
+    syn.set_defaults(func=cmd_synthetic)
+    mk = sub.add_parser("market"); mk.add_argument("--limit", type=int, default=8); mk.set_defaults(func=cmd_market)
+    tk = sub.add_parser("ticker"); tk.add_argument("ticker"); tk.add_argument("--days", type=int, default=30)
+    tk.set_defaults(func=cmd_ticker)
+    w = sub.add_parser("watcher").add_subparsers(dest="watcher_cmd", required=True)
+    w.add_parser("new").set_defaults(func=cmd_watcher)
+    wa = w.add_parser("add"); wa.add_argument("token"); wa.add_argument("kind", choices=["search", "ticker", "vehicle"])
+    wa.add_argument("value"); wa.set_defaults(func=cmd_watcher)
+    for name in ("list", "alerts"):
+        wp = w.add_parser(name); wp.add_argument("token"); wp.set_defaults(func=cmd_watcher)
     sub.add_parser("purge-leads").set_defaults(func=cmd_purge)
     return p
 

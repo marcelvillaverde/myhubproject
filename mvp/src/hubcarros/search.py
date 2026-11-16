@@ -12,6 +12,7 @@ from dataclasses import dataclass, fields, replace
 
 from .ingest import BODY_MAP, FUEL_MAP
 from .makes import KNOWN_MAKES, MAKE_ALIASES
+from .models import Vehicle
 
 
 
@@ -97,3 +98,32 @@ def parse_query(text: str) -> SearchFilters:
                 out["make"] = make
                 break
     return SearchFilters(**out)
+
+
+def matches(v: Vehicle, f: SearchFilters) -> bool:
+    """True when listing ``v`` satisfies every filter in ``f``."""
+    if f.make and v.make.lower() != f.make.lower():
+        return False
+    if f.model and f.model.lower() not in v.model.lower():
+        return False
+    if f.min_price is not None and (v.price_gbp or 0) < f.min_price:
+        return False
+    if f.max_price is not None and (v.price_gbp is None or v.price_gbp > f.max_price):
+        return False
+    if f.max_mileage is not None and v.mileage > f.max_mileage:
+        return False
+    if f.min_year is not None and v.year < f.min_year:
+        return False
+    if f.fuel and v.fuel != f.fuel.lower():
+        return False
+    if f.transmission and v.transmission != f.transmission.lower():
+        return False
+    if f.body and v.body != f.body.lower():
+        return False
+    if f.min_seats is not None and (v.seats is None or v.seats < f.min_seats):
+        return False
+    if f.keywords:
+        haystack = " ".join([v.description, " ".join(v.features), v.variant]).lower()
+        if not all(k.lower() in haystack for k in f.keywords):
+            return False
+    return True

@@ -1,6 +1,8 @@
-# hubcarros — MVP (fase 1: carros usados)
+# hubcarros — terminal de mercado de carros usados (MVP)
 
-Servidor MCP que deixa compradores buscarem carros de revendedores locais pelo ChatGPT/Claude, com **checagem de histórico** e **verificação automática de conformidade** dos anúncios. Especificação: [`docs/modulo-conteudo/mvp-spec.md`](../docs/modulo-conteudo/mvp-spec.md).
+Servidor MCP que funciona como um **terminal de mercado**: compradores (e, na próxima fase, vendedores) conectam o ChatGPT/Claude e acompanham o mercado de carros usados do Reino Unido como se fossem ações. Há tickers por modelo/ano, cotação e histórico, preço justo por comparáveis, watchlists e alertas. Tudo isso com **checagem de histórico** e **verificação automática de conformidade** dos anúncios.
+
+Especificações: [terminal](../docs/modulo-conteudo/terminal-spec.md) · [MVP original](../docs/modulo-conteudo/mvp-spec.md).
 
 > Textos voltados ao comprador e ao revendedor estão em inglês (usuários no Reino Unido). Documentação e CLI do operador em português.
 
@@ -12,7 +14,18 @@ pip install -e ".[dev]"          # Python 3.11+
 hubcarros demo                   # cria hubcarros.db com 2 revendedores fictícios e 12 carros
 hubcarros report demo-northgate  # relatório de conformidade por anúncio
 hubcarros search "automatic suv under £20k" --near LS6
-pytest -q                        # 48 testes
+pytest -q                        # 66 testes
+```
+
+Terminal com mercado sintético (30 revendedores fictícios, 60 dias de histórico, cerca de 10 s):
+
+```bash
+hubcarros --db mercado.db synthetic --dealers 30 --days 60
+hubcarros --db mercado.db market                 # mais anunciados, mais vendidos, altas e quedas
+hubcarros --db mercado.db ticker TOYOTA-YARIS-2018
+hubcarros --db mercado.db watcher new            # devolve o token secreto
+hubcarros --db mercado.db watcher add <TOKEN> search "tesla model 3 under £40k"
+hubcarros --db mercado.db watcher alerts <TOKEN>
 ```
 
 Servidor MCP:
@@ -47,6 +60,13 @@ Exemplo de configuração no Claude Desktop (`claude_desktop_config.json`):
 | `search_vehicles` | Texto livre + filtros estruturados; só retorna anúncios aprovados e sem alerta bloqueante no histórico |
 | `get_vehicle` | Ficha completa com resumo do histórico (fonte, data, aviso) |
 | `request_contact` | Cria lead **somente** com `consent_contact=true`; calcula *intent score* (não exibido ao comprador) |
+| `market_overview` | Painel: mais anunciados, mais vendidos, maiores altas/quedas em 30 dias |
+| `get_ticker` | Cotação de um ticker (`MAKE-MODEL-YEAR`): mediana, mín/máx, variação 7d/30d, dias até vender, histórico diário |
+| `create_watcher` | Cria watchlist e devolve **token secreto** (só o hash é guardado) |
+| `add_watch` / `list_watches` / `remove_watch` | Busca salva, ticker ou carro específico |
+| `get_alerts` | Alertas não lidos: `NEW_MATCH`, `PRICE_DROP`, `SOLD` |
+
+`search_vehicles` aceita `sort` (`best_deal`, `price_asc`, `newest_listing`…) e cada resultado traz ticker e avaliação de preço justo (`great`/`good`/`fair`/`high`). `get_vehicle` inclui histórico de preço do anúncio e o preço justo.
 
 As instruções do servidor proíbem o assistente de calcular ou sugerir financiamento (ver briefing jurídico).
 
@@ -54,7 +74,8 @@ As instruções do servidor proíbem o assistente de calcular ou sugerir financi
 
 ```bash
 hubcarros dealer add ng01 "Nome do Revendedor" "LS6 1AA" --phone "0113 ..." --email "..."
-hubcarros ingest ng01 estoque.csv     # idempotente; carros fora do arquivo saem da busca
+hubcarros ingest ng01 estoque.csv     # snapshot completo; carros fora do arquivo = vendidos (gera alertas)
+hubcarros ingest ng01 estoque.csv --date 2026-11-17   # data da observação (padrão: hoje)
 hubcarros report ng01                 # mostrar ao revendedor o que corrigir
 hubcarros draft 12                    # rascunho de descrição só com fatos do cadastro
 hubcarros leads ng01                  # leads com faixa de intenção
@@ -74,6 +95,9 @@ src/hubcarros/
   search.py      Filtros + interpretação de texto livre
   leads.py       Validação, consentimento, intent score
   copywriter.py  Rascunho de anúncio só com fatos verificados
+  market.py      Tickers, cotações, liquidez, preço justo (regressão preço × km)
+  watch.py       Watchlists, tokens, alertas
+  synthetic.py   Mercado sintético determinístico (demo/carga)
   service.py     Camada de aplicação (usada por MCP e CLI)
   db.py          SQLite (stdlib)
   server.py      Servidor MCP
@@ -87,3 +111,7 @@ data/demo/       Revendedores e estoque fictícios + checagens simuladas
 - Proximidade por postcode compara apenas a área (ex.: `LS`), sem geocodificação.
 - Sem autenticação no transporte HTTP: não exponha publicamente antes de adicionar auth.
 - Notificação de leads ao revendedor ainda é manual (`hubcarros leads`).
+- Alertas são lidos por *pull* (`get_alerts`); e-mail/push ainda não existem.
+- A ingestão trata cada arquivo como **estoque completo** do revendedor. Coletores de sites/portais (próxima etapa) vão precisar de um modo incremental, com expiração por "não visto há N dias".
+- Variação de preço por ticker mistura efeito de composição (quais carros estão anunciados) com tendência real; com poucos anúncios é ruído. Por isso exigimos ≥ 5 anúncios para aparecer em altas/quedas.
+- Os dados de `synthetic` são inventados; servem só para demonstrar o terminal.
