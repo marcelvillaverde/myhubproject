@@ -1,0 +1,4 @@
+[
+  {"id": "demo-northgate", "name": "Northgate Motors (demo)", "postcode": "LS6 1AA", "phone": "0113 496 0000", "email": "sales@northgate.example", "stock_file": "northgate_stock.csv"},
+  {"id": "demo-riverside", "name": "Riverside Car Sales (demo)", "postcode": "WF1 2BB", "phone": "0113 496 0001", "email": "hello@riverside.example", "stock_file": "riverside_stock.csv"}
+]
