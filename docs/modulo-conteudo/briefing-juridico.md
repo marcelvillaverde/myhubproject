@@ -35,6 +35,7 @@
 7. Para referral de financiamento: IAR de um corretor/credor autorizado é suficiente para um site que gera leads via IA? Quanto custa e quanto demora conseguir um principal?
 8. Para seguro: modelo de introducer — o que podemos e não podemos dizer ao comprador?
 9. Imóveis: o simples fato de cobrar por lead da agência nos torna *estate agent*? E se cobrarmos só assinatura SaaS, sem taxa por lead? Quais obrigações de *material information* (Partes A/B/C) recaem sobre nós vs. a agência?
+10. **Agregador/terminal:** agregar anúncios de portais (AutoTrader, Motors, eBay) e de sites de revendedores num terminal com histórico de preços. Em que condições isso infringe o *database right* (Copyright and Rights in Databases Regulations 1997; caso *Innoweb*, C-202/12, sobre anúncios de carros)? Existe estrutura viável (licença, extração não substancial, só link de saída)? E para sites de revendedores sem contrato?
 
 ## 4. Decisões já tomadas no MVP para reduzir risco
 - O assistente **não calcula, sugere ou compara parcelas** de financiamento. Se o comprador perguntar, a resposta é: "fale com o revendedor".

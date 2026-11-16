@@ -1,6 +1,8 @@
 # Módulo Conteúdo — Carros & Imóveis (Business Model Canvas)
 
 > Status: rascunho v0.1 · Mercado-alvo: Reino Unido · Data: 2026-11-16
+>
+> **Atualização 17/11/2026:** o foco mudou para agregador nacional + terminal de mercado. Ver [terminal-spec.md](terminal-spec.md).
 
 ## 1. Canvas
 
