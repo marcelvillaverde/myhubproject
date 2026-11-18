@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "hubcarros"
+version = "0.2.0"
+description = "MVP: busca de carros usados via MCP com verificação de risco e conformidade de anúncios"
+requires-python = ">=3.11"
+dependencies = ["mcp>=2.3,<3"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+hubcarros = "hubcarros.cli:main"
+hubcarros-mcp = "hubcarros.server:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+hubcarros = ["py.typed"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

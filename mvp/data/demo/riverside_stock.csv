@@ -1,0 +1,7 @@
+reg,make,model,variant,year,price,miles,fuel,gearbox,body,color,doors,seats,advert text,options
+RS16 GGG,Volkswagen,Golf,1.6 TDI Match,2016,6995,88000,Diesel,Manual,Hatchback,silver,5,5,"Reliable Golf. Price plus £199 admin fee.",Bluetooth;DAB
+RS19 HHH,Skoda,Octavia,2.0 TDI SE L Estate,2019,"£12,250",54000,Diesel,DSG,Estate,grey,5,5,"Big boot estate, ideal for families. Recorded Cat N, repaired professionally.",Sat nav;Parking sensors;Heated seats
+RS20 JJJ,Honda,Jazz,1.5 i-MMD EX,2020,"£14,995",18000,Hybrid,Automatic,Hatchback,white,5,5,"Low mileage Jazz hybrid with MOT till next year.",Apple CarPlay;Reversing camera
+RS15 KKK,Peugeot,5008,1.6 BlueHDi Allure,2015,"£6,250",95000,Diesel,Manual,SUV,black,5,7,"7 seater SUV. One owner.",7 seats;Sat nav
+RS21 LLL,Hyundai,Tucson,1.6 T-GDi Premium,2021,"£17,495",33000,Petrol,Automatic,SUV,blue,5,5,"Representative example: cash price £17,495, deposit £2,000, total amount of credit £15,495, 48 monthly payments of £389, total payable £20,672. Representative 9.9% APR, fixed interest rate 5.1%.",Heated wheel;360 camera
+RS18 MMM,Mazda,MX-5,2.0 Sport Nav,2018,,24000,Petrol,Manual,Convertible,red,2,2,"Fun roadster, call for price.",Heated seats;Bose audio

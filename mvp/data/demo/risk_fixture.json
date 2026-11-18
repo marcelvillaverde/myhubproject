@@ -1,0 +1,13 @@
+{
+  "DM19AAA": {"previous_keepers": 2, "mot_expiry": "2027-03-14"},
+  "DM20BBB": {"previous_keepers": 1, "mot_expiry": "2027-05-02"},
+  "DM18CCC": {"previous_keepers": 3, "mot_expiry": "2027-01-20"},
+  "DM21DDD": {"previous_keepers": 1, "mot_expiry": "2027-08-11"},
+  "DM17EEE": {"previous_keepers": 2, "mot_expiry": "2027-02-01", "mileage_discrepancy": true},
+  "DM22FFF": {"previous_keepers": 1, "outstanding_finance": true, "mot_expiry": "2027-09-30"},
+  "RS16GGG": {"previous_keepers": 4, "mot_expiry": "2026-06-30"},
+  "RS19HHH": {"previous_keepers": 2, "write_off_category": "N", "mot_expiry": "2027-04-18"},
+  "RS20JJJ": {"previous_keepers": 1, "mot_expiry": "2027-06-09"},
+  "RS15KKK": {"previous_keepers": 3, "mot_expiry": "2027-01-05"},
+  "RS21LLL": {"previous_keepers": 1, "mot_expiry": "2027-07-22"}
+}
